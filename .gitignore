@@ -3,3 +3,4 @@ target/
 *.lock
 *.exe
 *pdb
+.env
