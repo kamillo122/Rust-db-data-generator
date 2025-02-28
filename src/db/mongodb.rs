@@ -10,14 +10,11 @@ use mongodb::{
 pub async fn connect_mongodb(uri: &str) -> Result<Client> {
     let mut client_options = ClientOptions::parse(uri).await?;
 
-    // Set the API version for the client
     let server_api = ServerApi::builder().version(ServerApiVersion::V1).build();
     client_options.server_api = Some(server_api);
 
-    // Create the MongoDB client with the options
     let client = Client::with_options(client_options)?;
 
-    // Ping the server to check the connection
     client
         .database("test")
         .run_command(doc! {"ping": 1}, None)
@@ -55,9 +52,7 @@ pub async fn insert_into_mongodb(client: &Client, staff: &Staff) -> Result<()> {
         "hire_date": staff.hire_date.to_string(),
     };
 
-    // Insert the document into MongoDB
     collection.insert_one(doc, None).await?;
-    //println!("Inserted into MongoDB: {:?}", staff);
 
     Ok(())
 }
@@ -66,7 +61,6 @@ pub async fn insert_many_into_mongodb(client: &Client, staff_list: &[Staff]) -> 
     let database = client.database("test");
     let collection: Collection<Document> = database.collection("staff");
 
-    // Filtrowanie duplikatów przed wstawieniem
     let mut new_staff: Vec<Staff> = Vec::new();
     for staff in staff_list {
         if !staff_exists(client, staff.id).await? {

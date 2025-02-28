@@ -43,19 +43,19 @@ pub async fn insert_into_mysql(pool: &Pool, staff: &Staff) -> Result<(), Error> 
     Ok(())
 }
 
-pub async fn insert_staff_batch(pool: &Pool, staff_list: Vec<Staff>) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn insert_staff_batch(pool: &Pool, staff_list: &Vec<Staff>) -> Result<(), Box<dyn std::error::Error>> {
     let mut conn = pool.get_conn().await?;
     
     let mut tx = conn.start_transaction(mysql_async::TxOpts::default()).await?;
 
     let values: Vec<mysql_async::Params> = staff_list.into_iter().map(|staff| {
         mysql_async::Params::Positional(vec![
-            staff.id.into(),
-            staff.name.into(),
-            staff.department.into(),
-            staff.salary.into(),
-            staff.phone.into(),
-            staff.hire_date.format("%Y-%m-%d").to_string().into(),
+            staff.id.clone().into(),
+            staff.name.clone().into(),
+            staff.department.clone().into(),
+            staff.salary.clone().into(),
+            staff.phone.clone().into(),
+            staff.hire_date.clone().format("%Y-%m-%d").to_string().into(),
         ])
     }).collect();
 

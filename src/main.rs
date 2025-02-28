@@ -34,18 +34,16 @@ async fn main() {
         }
     };
     let start = Instant::now();
-    let staff_list: Vec<Staff> = Staff::generate_batch(5);
+    let staff_list: Vec<Staff> = Staff::generate_batch(100);
 
-    // Wkładanie do MySQL w jednym batchu
-    if let Err(e) = insert_staff_batch(&pool, staff_list.clone()).await {
+    if let Err(e) = insert_staff_batch(&pool, &staff_list).await {
         eprintln!("MySQL batch insert error: {:?}", e);
     }
-
-    // Wkładanie do MongoDB w jednym batchu
-    if let Err(e) = insert_many_into_mongodb(&mongodb_client, &staff_list).await {
+    let staff_list_clone = staff_list.clone();
+    if let Err(e) = insert_many_into_mongodb(&mongodb_client, &staff_list_clone).await {
         eprintln!("MongoDB batch insert error: {:?}", e);
     }
     let duration = start.elapsed();
-    println!("Time elapsed in generator is: {:?}", duration);
+    println!("Time elapsed by generator is: {:?}", duration);
     pool.disconnect().await.unwrap();
 }
