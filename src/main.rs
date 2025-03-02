@@ -3,8 +3,33 @@ mod models;
 
 use db::mongodb::{connect_mongodb, insert_many_into_mongodb};
 use db::mysql_handler::{connect_mysql, insert_staff_batch};
+
 use models::staff::Staff;
+use mongodb::Client;
+use mysql_async::Pool;
 use std::time::Instant;
+
+use tokio::join;
+
+async fn run(pool: &Pool, mongodb_client: &Client) {
+    let start = Instant::now();
+    let staff_list: Vec<Staff> = Staff::generate_batch(90);
+
+    let (mysql_result, mongo_result) = join!(
+        insert_staff_batch(pool, &staff_list),
+        insert_many_into_mongodb(mongodb_client, &staff_list)
+    );
+
+    if let Err(e) = mysql_result {
+        eprintln!("❌ MySQL batch insert error: {:?}", e);
+    }
+    if let Err(e) = mongo_result {
+        eprintln!("❌ MongoDB batch insert error: {:?}", e);
+    }
+
+    let duration = start.elapsed();
+    println!("✅ Time elapsed by generator and inserts: {:?}", duration);
+}
 
 #[tokio::main]
 async fn main() {
@@ -33,17 +58,6 @@ async fn main() {
             return;
         }
     };
-    let start = Instant::now();
-    let staff_list: Vec<Staff> = Staff::generate_batch(100);
-
-    if let Err(e) = insert_staff_batch(&pool, &staff_list).await {
-        eprintln!("MySQL batch insert error: {:?}", e);
-    }
-    let staff_list_clone = staff_list.clone();
-    if let Err(e) = insert_many_into_mongodb(&mongodb_client, &staff_list_clone).await {
-        eprintln!("MongoDB batch insert error: {:?}", e);
-    }
-    let duration = start.elapsed();
-    println!("Time elapsed by generator is: {:?}", duration);
+    run(&pool, &mongodb_client).await;
     pool.disconnect().await.unwrap();
 }

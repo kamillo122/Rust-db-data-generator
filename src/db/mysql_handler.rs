@@ -47,7 +47,6 @@ pub async fn insert_staff_batch(pool: &Pool, staff_list: &Vec<Staff>) -> Result<
     let mut conn = pool.get_conn().await?;
     
     let mut tx = conn.start_transaction(mysql_async::TxOpts::default()).await?;
-
     let values: Vec<mysql_async::Params> = staff_list.into_iter().map(|staff| {
         mysql_async::Params::Positional(vec![
             staff.id.clone().into(),
@@ -58,11 +57,11 @@ pub async fn insert_staff_batch(pool: &Pool, staff_list: &Vec<Staff>) -> Result<
             staff.hire_date.clone().format("%Y-%m-%d").to_string().into(),
         ])
     }).collect();
-
+    
     tx.exec_batch(
-        r"INSERT INTO staff (id, name, department, salary, phone, hire_date) 
-          VALUES (?, ?, ?, ?, ?, ?)",
-        values,
+    r"INSERT INTO staff (id, name, department, salary, phone, hire_date) 
+        VALUES (?, ?, ?, ?, ?, ?)",
+    values,
     ).await?;
 
     tx.commit().await?;
