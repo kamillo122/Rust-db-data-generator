@@ -1,14 +1,13 @@
 use chrono::NaiveDate;
-use rand::{thread_rng, Rng};
+use rand::{seq::SliceRandom, thread_rng, Rng};
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Staff {
     pub id: i32,
     pub name: String,
     pub department: String,
-    pub salary: f64,
+    pub salary: i32,
     pub phone: String,
     pub hire_date: NaiveDate,
 }
@@ -18,52 +17,26 @@ impl Staff {
         let mut rng = thread_rng();
         let department_list = ["HR", "IT", "Finance", "Sales"];
 
-        let mut used_ids = HashSet::new();
-        let mut used_names = HashSet::new();
-        let mut used_phones = HashSet::new();
+        // Pre-generujemy dostępne wartości zamiast iterować w nieskończoność
+        let mut available_ids: Vec<i32> = (1000..9999).collect();
+        let mut available_names: Vec<String> = (1..=500).map(|i| format!("Staff_{}", i)).collect();
+        let mut available_phones: Vec<String> = (1_000_000_000..1_000_000_000 + count as u64)
+            .map(|num| format!("+48 {}", num))
+            .collect();
+
+        available_ids.shuffle(&mut rng);
+        available_names.shuffle(&mut rng);
+        available_phones.shuffle(&mut rng);
 
         let mut staff_list = Vec::with_capacity(count);
 
-        for _ in 0..count {
-            // Unikalne ID
-            let id = loop {
-                let new_id = rng.gen_range(1000..9999);
-                if used_ids.insert(new_id) {
-                    break new_id;
-                }
-            };
+        for i in 0..count {
+            let id = available_ids[i];
+            let name = available_names[i].clone();
+            let phone = available_phones[i].clone();
 
-            // Unikalne imię
-            let name = loop {
-                let new_name = format!("Staff_{}", rng.gen_range(1..100));
-                if used_names.insert(new_name.clone()) {
-                    break new_name;
-                }
-            };
+            let salary = rng.gen_range(30_000..100_000);
 
-            // Unikalny telefon
-            let phone = loop {
-                let new_phone = format!(
-                    "+48 {}{}{}-{}{}{}-{}{}{}",
-                    rng.gen_range(1..10),
-                    rng.gen_range(0..10),
-                    rng.gen_range(0..10),
-                    rng.gen_range(0..10),
-                    rng.gen_range(0..10),
-                    rng.gen_range(0..10),
-                    rng.gen_range(0..10),
-                    rng.gen_range(0..10),
-                    rng.gen_range(0..10),
-                );
-                if used_phones.insert(new_phone.clone()) {
-                    break new_phone;
-                }
-            };
-
-            // Pensja (zaokrąglenie do pełnych złotych)
-            let salary = rng.gen_range(30000.0..100000.0_f64).round();
-
-            // Data zatrudnienia
             let hire_date = NaiveDate::from_ymd_opt(
                 2020 + rng.gen_range(0..5),
                 rng.gen_range(1..13),
@@ -74,7 +47,7 @@ impl Staff {
             staff_list.push(Self {
                 id,
                 name,
-                department: department_list[rng.gen_range(0..department_list.len())].to_string(),
+                department: department_list.choose(&mut rng).unwrap().to_string(),
                 salary,
                 phone,
                 hire_date,
