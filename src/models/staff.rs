@@ -19,7 +19,8 @@ impl Staff {
 
         // Pre-generujemy dostępne wartości zamiast iterować w nieskończoność
         let mut available_ids: Vec<i32> = (1000..9999).collect();
-        let mut available_names: Vec<String> = (1..=500).map(|i| format!("Staff_{}", i)).collect();
+        let mut available_names: Vec<String> =
+            (1..=10_000).map(|i| format!("Staff_{}", i)).collect();
         let mut available_phones: Vec<String> = (1_000_000_000..1_000_000_000 + count as u64)
             .map(|num| format!("+48 {}", num))
             .collect();

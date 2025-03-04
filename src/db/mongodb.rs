@@ -1,5 +1,4 @@
 use crate::models::staff::Staff;
-use futures::stream::TryStreamExt;
 use mongodb::{
     bson::doc,
     bson::Document,
@@ -8,8 +7,6 @@ use mongodb::{
     Client, Collection,
 };
 use std::time::Instant;
-
-const BATCH_SIZE: usize = 100;
 
 pub async fn connect_mongodb(uri: &str) -> Result<Client> {
     let mut client_options = ClientOptions::parse(uri).await?;
@@ -64,25 +61,10 @@ pub async fn insert_into_mongodb(client: &Client, staff: &Staff) -> Result<()> {
 pub async fn insert_many_into_mongodb(client: &Client, staff_list: &[Staff]) -> Result<()> {
     let start = Instant::now();
     let database = client.database("test");
-    let collection: Collection<Document> = database.collection("staff");
+    let collection = database.collection("staff");
 
-    let cursor = collection
-        .find(
-            doc! { "id": { "$in": staff_list.iter().map(|s| s.id).collect::<Vec<_>>() } },
-            None,
-        )
-        .await?;
-
-    let existing_ids: Vec<i32> = cursor
-        .try_collect::<Vec<Document>>()
-        .await?
-        .into_iter()
-        .filter_map(|doc| doc.get_i32("id").ok())
-        .collect();
-
-    let new_staff: Vec<_> = staff_list
+    let docs: Vec<Document> = staff_list
         .iter()
-        .filter(|staff| !existing_ids.contains(&staff.id))
         .map(|staff| {
             doc! {
                 "id": staff.id,
@@ -95,9 +77,8 @@ pub async fn insert_many_into_mongodb(client: &Client, staff_list: &[Staff]) -> 
         })
         .collect();
 
-    for chunk in new_staff.chunks(BATCH_SIZE) {
-        collection.insert_many(chunk.to_vec(), None).await?;
-    }
+    collection.insert_many(docs, None).await?;
+
     let duration = start.elapsed();
     println!("🚀 Time elapsed by MongoDB batch insert: {:?}", duration);
     Ok(())

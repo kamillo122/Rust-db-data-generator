@@ -30,7 +30,7 @@ async fn run(pool: &Pool, mongodb_client: &Client) {
     }
 
     println!(
-        "🔄 Inserted {:?} records into MySQL and MongoDB",
+        "📝 Inserted {:?} records into MySQL and MongoDB",
         staff_list.len()
     );
 }
