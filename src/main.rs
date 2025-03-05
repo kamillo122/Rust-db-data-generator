@@ -13,7 +13,8 @@ use tokio::join;
 
 async fn run(pool: &Pool, mongodb_client: &Client) {
     let start = Instant::now();
-    let staff_list: Vec<Staff> = Staff::generate_batch(500);
+    let names = Staff::load_names_from_file("src/utils/names.txt");
+    let staff_list: Vec<Staff> = Staff::generate_batch(250, &names);
     let duration = start.elapsed();
     println!("🚀 Time elapsed by generator: {:?}", duration);
 

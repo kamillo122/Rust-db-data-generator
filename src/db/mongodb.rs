@@ -3,8 +3,8 @@ use mongodb::{
     bson::doc,
     bson::Document,
     error::Result,
-    options::{ClientOptions, ServerApi, ServerApiVersion},
-    Client, Collection,
+    options::{ClientOptions, InsertManyOptions, ServerApi, ServerApiVersion},
+    Client,
 };
 use std::time::Instant;
 
@@ -25,27 +25,11 @@ pub async fn connect_mongodb(uri: &str) -> Result<Client> {
     Ok(client)
 }
 
-async fn staff_exists(client: &Client, id: i32) -> Result<bool> {
-    let database = client.database("test");
-    let collection: Collection<Document> = database.collection("staff");
-
-    let filter = doc! { "id": id };
-    let result = collection.find_one(filter, None).await?;
-
-    Ok(result.is_some())
-}
-
 pub async fn insert_into_mongodb(client: &Client, staff: &Staff) -> Result<()> {
-    if staff_exists(client, staff.id).await? {
-        println!("Skipping duplicate MongoDB entry: {:?}", staff);
-        return Ok(()); // Skip inserting if already exists
-    }
-
     let database = client.database("test");
     let collection = database.collection("staff");
 
     let doc = doc! {
-        "id": staff.id,
         "name": &staff.name,
         "department": &staff.department,
         "salary": staff.salary,
@@ -67,7 +51,6 @@ pub async fn insert_many_into_mongodb(client: &Client, staff_list: &[Staff]) -> 
         .iter()
         .map(|staff| {
             doc! {
-                "id": staff.id,
                 "name": &staff.name,
                 "department": &staff.department,
                 "salary": staff.salary,
