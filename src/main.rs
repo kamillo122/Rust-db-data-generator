@@ -2,12 +2,14 @@ mod db;
 mod models;
 
 use db::mongodb::{connect_mongodb, insert_many_into_mongodb};
-use db::mysql_handler::{connect_mysql, insert_staff_batch};
+use db::mysql_handler::{connect_mysql, get_staff, insert_staff_batch};
 use models::staff::Staff;
 
 use mongodb::Client;
 use mysql_async::Pool;
 use std::time::Instant;
+
+use axum::{extract::Extension, routing::get, Router};
 
 use tokio::join;
 
@@ -63,5 +65,11 @@ async fn main() {
         }
     };
     run(&pool, &mongodb_client).await;
+    let app = Router::new()
+        .route("/staff", get(get_staff))
+        .layer(Extension(pool.clone()));
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    axum::serve(listener, app).await.unwrap();
     pool.disconnect().await.unwrap();
+    mongodb_client.shutdown().await;
 }

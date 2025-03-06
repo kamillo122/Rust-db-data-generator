@@ -1,4 +1,6 @@
 use crate::models::staff::Staff;
+use axum::{extract::Extension, response::IntoResponse, Json};
+use chrono::NaiveDate;
 use mysql_async::prelude::*;
 use mysql_async::{Conn, Error, Opts, Pool, TxOpts};
 use std::time::Instant;
@@ -14,25 +16,64 @@ pub async fn connect_mysql(database_url: &str) -> Result<Pool, Error> {
     Ok(pool)
 }
 
-pub async fn insert_into_mysql(pool: &Pool, staff: &Staff) -> Result<(), Error> {
+// pub async fn insert_into_mysql(pool: &Pool, staff: &Staff) -> Result<(), Error> {
+//     let mut conn = pool.get_conn().await?;
+
+//     let mut tx = conn.start_transaction(TxOpts::default()).await?;
+//     tx.exec_drop(
+//         "INSERT INTO staff (name, department, salary, phone, hire_date) VALUES (?, ?, ?, ?, ?)",
+//         (
+//             &staff.name,
+//             &staff.department,
+//             &staff.salary,
+//             &staff.phone,
+//             &staff.hire_date.to_string(),
+//         ),
+//     )
+//     .await?;
+
+//     tx.commit().await?;
+
+//     Ok(())
+// }
+
+async fn fetch_all_staff(pool: &Pool) -> Result<Json<Vec<Staff>>, Error> {
     let mut conn = pool.get_conn().await?;
 
-    let mut tx = conn.start_transaction(TxOpts::default()).await?;
-    tx.exec_drop(
-        "INSERT INTO staff (name, department, salary, phone, hire_date) VALUES (?, ?, ?, ?, ?)",
-        (
-            &staff.name,
-            &staff.department,
-            &staff.salary,
-            &staff.phone,
-            &staff.hire_date.to_string(),
-        ),
-    )
-    .await?;
+    let staff_list: Vec<Staff> = conn
+        .query_map(
+            "SELECT name, department, salary, phone, hire_date FROM staff",
+            |(name, department, salary, phone, hire_date): (
+                String,
+                String,
+                i32,
+                String,
+                String,
+            )| Staff {
+                name,
+                department,
+                salary,
+                phone,
+                hire_date: NaiveDate::parse_from_str(&hire_date, "%Y-%m-%d").unwrap(),
+            },
+        )
+        .await?;
 
-    tx.commit().await?;
+    Ok(Json(staff_list))
+}
 
-    Ok(())
+pub async fn get_staff(Extension(pool): Extension<Pool>) -> impl IntoResponse {
+    match fetch_all_staff(&pool).await {
+        Ok(staff) => staff.into_response(),
+        Err(e) => {
+            eprintln!("❌ Failed to fetch staff: {:?}", e);
+            (
+                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to fetch staff",
+            )
+                .into_response()
+        }
+    }
 }
 
 pub async fn insert_staff_batch(

@@ -1,9 +1,10 @@
 use crate::models::staff::Staff;
 use mongodb::{
     bson::doc,
+    bson::to_bson,
     bson::Document,
     error::Result,
-    options::{ClientOptions, InsertManyOptions, ServerApi, ServerApiVersion},
+    options::{ClientOptions, ServerApi, ServerApiVersion},
     Client,
 };
 use std::time::Instant;
@@ -49,15 +50,7 @@ pub async fn insert_many_into_mongodb(client: &Client, staff_list: &[Staff]) -> 
 
     let docs: Vec<Document> = staff_list
         .iter()
-        .map(|staff| {
-            doc! {
-                "name": &staff.name,
-                "department": &staff.department,
-                "salary": staff.salary,
-                "phone": &staff.phone,
-                "hire_date": staff.hire_date.to_string(),
-            }
-        })
+        .map(|staff| to_bson(staff).unwrap().as_document().unwrap().clone())
         .collect();
 
     collection.insert_many(docs, None).await?;
