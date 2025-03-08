@@ -2,8 +2,14 @@ use crate::models::staff::Staff;
 use axum::{extract::Extension, response::IntoResponse, Json};
 use chrono::NaiveDate;
 use mysql_async::prelude::*;
-use mysql_async::{Conn, Error, Opts, Pool, TxOpts};
+use mysql_async::{Conn, Error, Opts, Pool};
+use serde::Deserialize;
 use std::time::Instant;
+
+#[derive(Debug, Deserialize)]
+pub struct GenerateRequest {
+    count: usize,
+}
 
 pub async fn connect_mysql(database_url: &str) -> Result<Pool, Error> {
     let opts = Opts::from_url(database_url)?;
@@ -15,27 +21,6 @@ pub async fn connect_mysql(database_url: &str) -> Result<Pool, Error> {
     println!("✅ Successfully connected to MySQL!");
     Ok(pool)
 }
-
-// pub async fn insert_into_mysql(pool: &Pool, staff: &Staff) -> Result<(), Error> {
-//     let mut conn = pool.get_conn().await?;
-
-//     let mut tx = conn.start_transaction(TxOpts::default()).await?;
-//     tx.exec_drop(
-//         "INSERT INTO staff (name, department, salary, phone, hire_date) VALUES (?, ?, ?, ?, ?)",
-//         (
-//             &staff.name,
-//             &staff.department,
-//             &staff.salary,
-//             &staff.phone,
-//             &staff.hire_date.to_string(),
-//         ),
-//     )
-//     .await?;
-
-//     tx.commit().await?;
-
-//     Ok(())
-// }
 
 async fn fetch_all_staff(pool: &Pool) -> Result<Json<Vec<Staff>>, Error> {
     let mut conn = pool.get_conn().await?;
@@ -60,6 +45,32 @@ async fn fetch_all_staff(pool: &Pool) -> Result<Json<Vec<Staff>>, Error> {
         .await?;
 
     Ok(Json(staff_list))
+}
+
+pub async fn generate_staff(
+    Extension(pool): Extension<Pool>,
+    Json(payload): Json<GenerateRequest>,
+) -> Result<Json<String>, String> {
+    let names = Staff::load_names_from_file("src/utils/names.txt");
+    let staff_list: Vec<Staff> = Staff::generate_batch(payload.count, &names);
+
+    insert_staff_batch(&pool, &staff_list)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(Json(format!(
+        "✅ Generated and inserted {} staff",
+        payload.count
+    )))
+}
+
+pub async fn clear_staff(Extension(pool): Extension<Pool>) -> Result<Json<String>, String> {
+    let mut conn = pool.get_conn().await.map_err(|e| e.to_string())?;
+    conn.query_drop("DELETE FROM staff")
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(Json("✅ Database cleared successfully".to_string()))
 }
 
 pub async fn get_staff(Extension(pool): Extension<Pool>) -> impl IntoResponse {
