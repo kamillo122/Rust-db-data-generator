@@ -1,5 +1,6 @@
 use chrono::NaiveDate;
-use rand::{seq::SliceRandom, thread_rng, Rng};
+use rand::rngs::SmallRng;
+use rand::{seq::SliceRandom, Rng, SeedableRng};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashSet,
@@ -24,7 +25,7 @@ impl Staff {
     }
 
     pub fn generate_batch(count: usize, names: &[String]) -> Vec<Self> {
-        let mut rng = thread_rng();
+        let mut rng = SmallRng::from_entropy();
         let department_list = ["HR", "IT", "Finance", "Sales"];
 
         let mut used_phones = HashSet::new();
@@ -60,7 +61,6 @@ impl Staff {
                 hire_date,
             });
         }
-
         staff_list
     }
 }

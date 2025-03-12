@@ -1,11 +1,14 @@
 use crate::models::staff::Staff;
+
+use futures::stream::StreamExt;
 use mongodb::{
     bson::doc,
+    bson::from_document,
     bson::to_bson,
     bson::Document,
-    error::Result,
+    error::{Error, Result},
     options::{ClientOptions, ServerApi, ServerApiVersion},
-    Client,
+    Client, Collection, Cursor,
 };
 use std::time::Instant;
 
@@ -43,6 +46,19 @@ pub async fn insert_into_mongodb(client: &Client, staff: &Staff) -> Result<()> {
     Ok(())
 }
 
+pub async fn fetch_all_staff_mongodb(client: &Client) -> Result<Vec<Staff>> {
+    let collection: Collection<Staff> = client.database("test").collection("staff");
+    let mut cursor = collection.find(None, None).await?;
+    let mut staff_list = Vec::new();
+    while let Some(result) = cursor.next().await {
+        match result {
+            Ok(staff) => staff_list.push(staff),
+            Err(e) => return Err(e.into()),
+        }
+    }
+    Ok(staff_list)
+}
+
 pub async fn insert_many_into_mongodb(client: &Client, staff_list: &[Staff]) -> Result<()> {
     let start = Instant::now();
     let database = client.database("test");
@@ -57,5 +73,16 @@ pub async fn insert_many_into_mongodb(client: &Client, staff_list: &[Staff]) -> 
 
     let duration = start.elapsed();
     println!("🚀 Time elapsed by MongoDB batch insert: {:?}", duration);
+    Ok(())
+}
+
+pub async fn clear_mongodb(client: &Client) -> Result<()> {
+    let database = client.database("test");
+    let collection: Collection<Staff> = database.collection("staff");
+    let delete_result = collection.delete_many(doc! {}, None).await?;
+    println!(
+        "🧹 Deleted {} documents from MongoDB!",
+        delete_result.deleted_count
+    );
     Ok(())
 }

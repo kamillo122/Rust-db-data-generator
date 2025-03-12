@@ -1,45 +1,13 @@
 mod db;
 mod models;
 
-use axum::routing::delete;
-use db::mongodb::{connect_mongodb, insert_many_into_mongodb};
-use db::mysql_handler::{clear_staff, connect_mysql, generate_staff, get_staff};
-use models::staff::Staff;
+use db::database_handler::{clear_staff, generate_staff, get_staff};
+use db::mongodb::connect_mongodb;
+use db::mysql_handler::connect_mysql;
 
-use mongodb::Client;
-use mysql_async::Pool;
-use std::time::Instant;
-
-use axum::{extract::Extension, routing::get, routing::post, Router};
+use axum::{extract::Extension, routing::post, Router};
 use http::header::HeaderValue;
 use tower_http::cors::{Any, CorsLayer};
-
-use tokio::join;
-
-// async fn run(pool: &Pool, mongodb_client: &Client) {
-//     let start = Instant::now();
-//     let names = Staff::load_names_from_file("src/utils/names.txt");
-//     let staff_list: Vec<Staff> = Staff::generate_batch(250, &names);
-//     let duration = start.elapsed();
-//     println!("🚀 Time elapsed by generator: {:?}", duration);
-
-//     let (mysql_result, mongo_result) = join!(
-//         insert_staff_batch(pool, &staff_list),
-//         insert_many_into_mongodb(mongodb_client, &staff_list)
-//     );
-
-//     if let Err(e) = mysql_result {
-//         eprintln!("❌ MySQL batch insert error: {:?}", e);
-//     }
-//     if let Err(e) = mongo_result {
-//         eprintln!("❌ MongoDB batch insert error: {:?}", e);
-//     }
-
-//     println!(
-//         "📝 Inserted {:?} records into MySQL and MongoDB",
-//         staff_list.len()
-//     );
-// }
 
 #[tokio::main]
 async fn main() {
@@ -73,10 +41,11 @@ async fn main() {
         .allow_headers(Any);
 
     let app = Router::new()
-        .route("/staff", get(get_staff))
         .route("/generate", post(generate_staff))
-        .route("/clear", delete(clear_staff))
+        .route("/clear", post(clear_staff))
+        .route("/staff", post(get_staff))
         .layer(Extension(pool.clone()))
+        .layer(Extension(mongodb_client.clone()))
         .layer(cors);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();

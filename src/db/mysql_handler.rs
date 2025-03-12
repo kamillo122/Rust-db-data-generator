@@ -1,5 +1,5 @@
 use crate::models::staff::Staff;
-use axum::{extract::Extension, response::IntoResponse, Json};
+use axum::Json;
 use chrono::NaiveDate;
 use mysql_async::prelude::*;
 use mysql_async::{Conn, Error, Opts, Pool};
@@ -22,7 +22,7 @@ pub async fn connect_mysql(database_url: &str) -> Result<Pool, Error> {
     Ok(pool)
 }
 
-async fn fetch_all_staff(pool: &Pool) -> Result<Json<Vec<Staff>>, Error> {
+pub async fn fetch_all_staff_mysql(pool: &Pool) -> Result<Json<Vec<Staff>>, Error> {
     let mut conn = pool.get_conn().await?;
 
     let staff_list: Vec<Staff> = conn
@@ -47,50 +47,16 @@ async fn fetch_all_staff(pool: &Pool) -> Result<Json<Vec<Staff>>, Error> {
     Ok(Json(staff_list))
 }
 
-pub async fn generate_staff(
-    Extension(pool): Extension<Pool>,
-    Json(payload): Json<GenerateRequest>,
-) -> Result<Json<String>, String> {
-    let names = Staff::load_names_from_file("src/utils/names.txt");
-    let staff_list: Vec<Staff> = Staff::generate_batch(payload.count, &names);
-
-    insert_staff_batch(&pool, &staff_list)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    Ok(Json(format!(
-        "✅ Generated and inserted {} staff",
-        payload.count
-    )))
-}
-
-pub async fn clear_staff(Extension(pool): Extension<Pool>) -> Result<Json<String>, String> {
+pub async fn clear_staff_mysql(pool: &Pool) -> Result<(), Box<dyn std::error::Error>> {
     let mut conn = pool.get_conn().await.map_err(|e| e.to_string())?;
     conn.query_drop("DELETE FROM staff")
         .await
         .map_err(|e| e.to_string())?;
 
-    Ok(Json("✅ Database cleared successfully".to_string()))
+    Ok(())
 }
 
-pub async fn get_staff(Extension(pool): Extension<Pool>) -> impl IntoResponse {
-    match fetch_all_staff(&pool).await {
-        Ok(staff) => staff.into_response(),
-        Err(e) => {
-            eprintln!("❌ Failed to fetch staff: {:?}", e);
-            (
-                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                "Failed to fetch staff",
-            )
-                .into_response()
-        }
-    }
-}
-
-pub async fn insert_staff_batch(
-    pool: &Pool,
-    staff_list: &Vec<Staff>,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn insert_staff_batch(pool: &Pool, staff_list: &Vec<Staff>) -> Result<(), Error> {
     let start = Instant::now();
     let mut conn = pool.get_conn().await?;
 
@@ -126,6 +92,5 @@ pub async fn insert_staff_batch(
 
     let duration = start.elapsed();
     println!("🚀 Time elapsed by MySQL batch insert: {:?}", duration);
-
     Ok(())
 }
