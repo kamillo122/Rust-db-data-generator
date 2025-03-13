@@ -3,12 +3,11 @@ use crate::models::staff::Staff;
 use futures::stream::StreamExt;
 use mongodb::{
     bson::doc,
-    bson::from_document,
     bson::to_bson,
     bson::Document,
-    error::{Error, Result},
+    error::Result,
     options::{ClientOptions, ServerApi, ServerApiVersion},
-    Client, Collection, Cursor,
+    Client, Collection,
 };
 use std::time::Instant;
 

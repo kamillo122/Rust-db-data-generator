@@ -2,12 +2,14 @@ use axum::{extract::Extension, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
 
 use super::mongodb::{clear_mongodb, fetch_all_staff_mongodb, insert_many_into_mongodb};
-use super::mysql_handler::{clear_staff_mysql, fetch_all_staff_mysql, insert_staff_batch};
+use super::mysql::{clear_staff_mysql, fetch_all_staff_mysql, insert_staff_batch};
 use crate::models;
+use crate::utils;
 
 use models::staff::Staff;
 use mongodb::Client;
 use mysql_async::Pool;
+use utils::utils::load_from_file;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GenerateRequest {
@@ -30,7 +32,7 @@ pub async fn generate_staff(
     Extension(mongodb_client): Extension<Client>,
     Json(payload): Json<GenerateRequest>,
 ) -> Result<Json<String>, (StatusCode, String)> {
-    let names = Staff::load_names_from_file("src/utils/names.txt");
+    let names = load_from_file("src/utils/names.txt");
     let staff_list: Vec<Staff> = Staff::generate_batch(payload.count, &names);
 
     match payload.db_type.as_str() {

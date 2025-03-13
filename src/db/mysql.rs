@@ -3,13 +3,7 @@ use axum::Json;
 use chrono::NaiveDate;
 use mysql_async::prelude::*;
 use mysql_async::{Conn, Error, Opts, Pool};
-use serde::Deserialize;
 use std::time::Instant;
-
-#[derive(Debug, Deserialize)]
-pub struct GenerateRequest {
-    count: usize,
-}
 
 pub async fn connect_mysql(database_url: &str) -> Result<Pool, Error> {
     let opts = Opts::from_url(database_url)?;

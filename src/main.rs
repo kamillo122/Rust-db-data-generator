@@ -1,9 +1,10 @@
 mod db;
 mod models;
+mod utils;
 
 use db::database_handler::{clear_staff, generate_staff, get_staff};
 use db::mongodb::connect_mongodb;
-use db::mysql_handler::connect_mysql;
+use db::mysql::connect_mysql;
 
 use axum::{extract::Extension, routing::post, Router};
 use http::header::HeaderValue;

@@ -2,11 +2,7 @@ use chrono::NaiveDate;
 use rand::rngs::SmallRng;
 use rand::{seq::SliceRandom, Rng, SeedableRng};
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::HashSet,
-    fs::File,
-    io::{BufRead, BufReader},
-};
+use std::collections::HashSet;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Staff {
@@ -18,12 +14,6 @@ pub struct Staff {
 }
 
 impl Staff {
-    pub fn load_names_from_file(filename: &str) -> Vec<String> {
-        let file = File::open(filename).expect("Failed to open names file");
-        let reader = BufReader::new(file);
-        reader.lines().filter_map(Result::ok).collect()
-    }
-
     pub fn generate_batch(count: usize, names: &[String]) -> Vec<Self> {
         let mut rng = SmallRng::from_entropy();
         let department_list = ["HR", "IT", "Finance", "Sales"];
