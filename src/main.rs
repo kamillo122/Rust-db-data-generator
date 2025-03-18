@@ -2,7 +2,7 @@ mod db;
 mod models;
 mod utils;
 
-use db::database_handler::{clear_staff, generate_staff, get_staff};
+use db::database_handler::{clear_staff, generate_data, get_data};
 use db::mongodb::connect_mongodb;
 use db::mysql::connect_mysql;
 
@@ -42,9 +42,9 @@ async fn main() {
         .allow_headers(Any);
 
     let app = Router::new()
-        .route("/generate", post(generate_staff))
+        .route("/generate", post(generate_data))
         .route("/clear", post(clear_staff))
-        .route("/staff", post(get_staff))
+        .route("/data", post(get_data))
         .layer(Extension(pool.clone()))
         .layer(Extension(mongodb_client.clone()))
         .layer(cors);

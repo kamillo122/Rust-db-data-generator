@@ -8,19 +8,18 @@ use utils::utils::load_from_file;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Client {
-    first_name: String,
-    last_name: String,
-    email: String,
-    phone: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub email: String,
+    pub phone_number: String,
 }
 
 impl Client {
     pub fn generate_batch(count: usize) -> Vec<Self> {
         let mut rng = SmallRng::from_entropy();
 
-        // Wczytanie list imion i nazwisk
-        let last_names: Vec<String> = load_from_file("last_names.txt");
-        let first_names: Vec<String> = load_from_file("names.txt");
+        let last_names: Vec<String> = load_from_file("src/utils/last_names.txt");
+        let first_names: Vec<String> = load_from_file("src/utils/names.txt");
 
         let email_domains = vec!["gmail.com", "yahoo.com", "outlook.com", "example.com"];
         let mut used_phones = HashSet::new();
@@ -31,12 +30,12 @@ impl Client {
                 .choose(&mut rng)
                 .cloned()
                 .unwrap_or_else(|| "John".to_string());
+
             let last_name = last_names
                 .choose(&mut rng)
                 .cloned()
                 .unwrap_or_else(|| "Doe".to_string());
 
-            // Generowanie e-maila
             let email = format!(
                 "{}.{}@{}",
                 first_name.to_lowercase(),
@@ -44,8 +43,7 @@ impl Client {
                 email_domains.choose(&mut rng).unwrap()
             );
 
-            // Generowanie numeru telefonu w formacie +XX XXX XXX XXX
-            let phone = loop {
+            let phone_number = loop {
                 let new_phone = format!(
                     "+48 {:08}",
                     rng.gen_range(6_000_000_000_i64..9_000_000_000_i64)
@@ -59,7 +57,7 @@ impl Client {
                 first_name,
                 last_name,
                 email,
-                phone,
+                phone_number,
             });
         }
 

@@ -3,7 +3,7 @@ use rand::rngs::SmallRng;
 use rand::{seq::SliceRandom, Rng, SeedableRng};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Contract {
     pub type_of_contract: String,
     pub start_date: NaiveDate,

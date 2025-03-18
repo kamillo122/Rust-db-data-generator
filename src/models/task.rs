@@ -3,23 +3,19 @@ use rand::rngs::SmallRng;
 use rand::{seq::SliceRandom, Rng, SeedableRng};
 use serde::{Deserialize, Serialize};
 
-use crate::utils;
-use utils::utils::load_from_file;
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Task {
-    name: String,
-    description: String,
-    start_date: NaiveDate,
-    end_date: NaiveDate,
-    status: String,
+    pub name: String,
+    pub description: String,
+    pub start_date: NaiveDate,
+    pub end_date: NaiveDate,
+    pub status: String,
 }
 
 impl Task {
     pub fn generate_batch(count: usize) -> Vec<Self> {
         let mut rng = SmallRng::from_entropy();
 
-        // Example lists of potential values for fields
         let names = vec!["Task A", "Task B", "Task C", "Task D"];
         let descriptions = vec![
             "Task to research new technology.",
@@ -36,12 +32,12 @@ impl Task {
                 .choose(&mut rng)
                 .unwrap_or(&"Default Task")
                 .to_string();
+
             let description = descriptions
                 .choose(&mut rng)
                 .unwrap_or(&"Default description")
                 .to_string();
 
-            // Randomly generate dates
             let start_year = rng.gen_range(2022..2025);
             let end_year = rng.gen_range(start_year..2026);
 

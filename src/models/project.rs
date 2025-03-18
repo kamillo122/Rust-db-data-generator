@@ -5,18 +5,17 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Project {
-    name: String,
-    description: String,
-    start_date: NaiveDate,
-    end_date: NaiveDate,
-    status: String,
+    pub name: String,
+    pub description: String,
+    pub start_date: NaiveDate,
+    pub end_date: NaiveDate,
+    pub status: String,
 }
 
 impl Project {
     pub fn generate_batch(count: usize) -> Vec<Self> {
         let mut rng = SmallRng::from_entropy();
 
-        // Example lists of potential values for fields
         let names = vec!["Project A", "Project B", "Project C", "Project D"];
         let descriptions = vec![
             "A project focused on AI research.",
@@ -38,7 +37,6 @@ impl Project {
                 .unwrap_or(&"Default description")
                 .to_string();
 
-            // Randomly generate dates
             let start_year = rng.gen_range(2022..2025);
             let end_year = rng.gen_range(start_year..2026);
 

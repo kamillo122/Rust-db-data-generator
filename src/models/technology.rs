@@ -1,11 +1,11 @@
 use rand::rngs::SmallRng;
-use rand::{seq::SliceRandom, Rng, SeedableRng};
+use rand::{seq::SliceRandom, SeedableRng};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Technology {
-    name: String,
-    description: String,
+    pub name: String,
+    pub description: String,
 }
 
 impl Technology {
