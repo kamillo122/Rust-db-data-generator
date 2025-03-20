@@ -5,7 +5,7 @@ use crate::models::{
     project::Project, task::Task, technology::Technology,
 };
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum TableType {
     Technology(Technology),
     Task(Task),

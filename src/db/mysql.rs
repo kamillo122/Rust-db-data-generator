@@ -1,6 +1,7 @@
 use crate::db::table_type::{GetParams, TableType};
 use axum::Json;
 use chrono::NaiveDate;
+use futures::future::join_all;
 use mysql_async::prelude::*;
 use mysql_async::{Conn, Error, Opts, Pool};
 
@@ -229,6 +230,82 @@ pub async fn clear_mysql(
         }
         _ => return Err("Invalid table name".into()),
     }
+    Ok(())
+}
+
+pub async fn parallel_insert_batch(pool: &Pool, list: &Vec<TableType>) -> Result<(), Error> {
+    let mut tasks = Vec::new();
+
+    for item in list {
+        let pool = pool.clone();
+        let item = item.clone();
+
+        let task = tokio::spawn(async move {
+            let mut conn = pool.get_conn().await?;
+            match item {
+                TableType::Technology(_) => {
+                    conn.exec_drop(
+                        "INSERT IGNORE INTO technology (name, description) VALUES (?, ?)",
+                        item.get_params()
+                    ).await
+                },
+                TableType::Task(_) => {
+                    conn.exec_drop(
+                        "INSERT IGNORE INTO task (name, description, start_date, end_date, status) VALUES (?, ?, ?, ?, ?)",
+                        item.get_params()
+                    ).await
+                },
+                TableType::Project(_) => {
+                    conn.exec_drop(
+                        "INSERT IGNORE INTO project (name, description, start_date, end_date, status) VALUES (?, ?, ?, ?, ?)",
+                        item.get_params()
+                    ).await
+                },
+                TableType::Payment(_) => {
+                    conn.exec_drop(
+                        "INSERT IGNORE INTO payment (amount, payment_due_date, method) VALUES (?, ?, ?)",
+                        item.get_params()
+                    ).await
+                },
+                TableType::Employee(_) => {
+                    conn.exec_drop(
+                        "INSERT IGNORE INTO employee (first_name, last_name, email, phone_number, position, contract_date) VALUES (?, ?, ?, ?, ?, ?)",
+                        item.get_params()
+                    ).await
+                },
+                TableType::Contract(_) => {
+                    conn.exec_drop(
+                        "INSERT IGNORE INTO contract (type_of_contract, start_date, end_date, salary) VALUES (?, ?, ?, ?)",
+                        item.get_params()
+                    ).await
+                },
+                TableType::Client(_) => {
+                    conn.exec_drop(
+                        "INSERT IGNORE INTO client (first_name, last_name, email, phone_number) VALUES (?, ?, ?, ?)",
+                        item.get_params()
+                    ).await
+                },
+                TableType::Address(_) => {
+                    conn.exec_drop(
+                        "INSERT IGNORE INTO address (city, street, street_number, postal_code) VALUES (?, ?, ?, ?)",
+                        item.get_params()
+                    ).await
+                },
+            }
+        });
+
+        tasks.push(task);
+    }
+
+    let results = join_all(tasks).await;
+
+    for result in results {
+        match result {
+            Ok(inner_result) => inner_result?,
+            Err(join_error) => return Err(Error::Other(Box::new(join_error))),
+        }
+    }
+
     Ok(())
 }
 
