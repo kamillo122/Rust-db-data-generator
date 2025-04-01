@@ -1,4 +1,4 @@
-use crate::db::table_type::TableType;
+use crate::db::table_type_mysql::TableType;
 use crate::models;
 use crate::models::{
     address::Address, contract::Contract, employee::Employee, payment::Payment, project::Project,

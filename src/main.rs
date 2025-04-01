@@ -36,6 +36,7 @@ async fn main() {
             return;
         }
     };
+
     let cors = CorsLayer::new()
         .allow_origin("http://localhost:5173".parse::<HeaderValue>().unwrap())
         .allow_methods(Any)

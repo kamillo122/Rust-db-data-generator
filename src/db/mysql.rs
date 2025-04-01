@@ -1,4 +1,4 @@
-use crate::db::table_type::{GetParams, TableType};
+use crate::db::table_type_mysql::{GetParams, TableType};
 use axum::Json;
 use chrono::NaiveDate;
 use futures::future::join_all;

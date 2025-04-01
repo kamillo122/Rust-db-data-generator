@@ -1,4 +1,4 @@
-use crate::db::table_type::TableType;
+use super::table_type_mysql::TableType;
 use axum::{extract::Extension, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
 
